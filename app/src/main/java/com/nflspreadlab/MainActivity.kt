@@ -302,6 +302,7 @@ private fun loadModelData(): ModelData {
     val homeI = index("home_team")
     val awayScoreI = index("away_score")
     val homeScoreI = index("home_score")
+    val spreadI = index("spread_line")
 
     val games = mutableListOf<Game>()
 
