@@ -240,9 +240,9 @@ Text(
                             },
                             label = { Text("Vegas home spread") },
                             placeholder = { Text("Example: -3.5") },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Decimal
-                            ),
+                          keyboardOptions = KeyboardOptions(
+    keyboardType = KeyboardType.Text
+),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
