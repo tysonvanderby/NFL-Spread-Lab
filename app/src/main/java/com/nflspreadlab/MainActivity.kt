@@ -36,7 +36,8 @@ private data class Game(
     val away: String,
     val home: String,
     val awayScore: Double?,
-    val homeScore: Double?
+    val homeScore: Double?,
+    val spreadLine: Double? = null
 )
 
 private data class Projection(
