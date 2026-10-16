@@ -53,7 +53,12 @@ private data class Validation(
     val marginMae: Double,
     val marginRmse: Double,
     val winAccuracy: Double,
-    val brierScore: Double
+    val brierScore: Double,
+    val atsPicks: Int,
+    val atsWins: Int,
+    val atsLosses: Int,
+    val atsPushes: Int,
+    val atsNetUnits: Double
 )
 
 private data class ModelData(
@@ -154,6 +159,33 @@ private fun SpreadLabScreen() {
                     Text("Margin RMSE: ${decimal(model.validation.marginRmse)} points")
                     Text("Winner accuracy: ${pct(model.validation.winAccuracy)}")
                     Text("Win probability Brier score: ${decimal(model.validation.brierScore)}")
+                    Text("ATS picks tested: ${model.validation.atsPicks}")
+                    Text(
+    "ATS record (W-L-P): " +
+        "${model.validation.atsWins}-" +
+        "${model.validation.atsLosses}-" +
+        "${model.validation.atsPushes}"
+)
+val atsDecisions = model.validation.atsWins + model.validation.atsLosses
+Text(
+    "ATS win rate: " +
+        if (atsDecisions > 0)
+            pct(model.validation.atsWins.toDouble() / atsDecisions)
+        else "N/A"
+)
+Text("Simulated net units at -110: ${signed(model.validation.atsNetUnits)}")
+Text(
+    "Simulated ROI: " +
+        if (atsDecisions > 0)
+            pct(model.validation.atsNetUnits / atsDecisions)
+        else "N/A"
+)
+Text(
+    "ATS test uses a minimum 1.5-point model edge. " +
+        "Results are historical simulations, not guaranteed future returns.",
+    style = MaterialTheme.typography.bodySmall
+)
+
                     Text(
                         "Each historical game is predicted before its result updates ratings. " +
                             "Model settings are preliminary; this is not verified betting performance.",
@@ -312,8 +344,9 @@ private fun loadModelData(): ModelData {
         val row = parseCsvLine(line)
 
         if (row.size <= listOf(
-                dateI, typeI, weekI, awayI, homeI, awayScoreI, homeScoreI
-            ).max()) continue
+        dateI, typeI, weekI, awayI, homeI,
+        awayScoreI, homeScoreI, spreadI
+    ).max()) continue
 
         if (row[typeI].trim().trim('"') != "REG") continue
 
@@ -329,7 +362,8 @@ private fun loadModelData(): ModelData {
                 away = away,
                 home = home,
                 awayScore = row[awayScoreI].trim().trim('"').toDoubleOrNull(),
-                homeScore = row[homeScoreI].trim().trim('"').toDoubleOrNull()
+homeScore = row[homeScoreI].trim().trim('"').toDoubleOrNull(),
+spreadLine = row[spreadI].trim().trim('"').toDoubleOrNull()
             )
         )
     }
@@ -346,6 +380,11 @@ private fun loadModelData(): ModelData {
     var brierTotal = 0.0
     var correctWinners = 0
     var decisiveGames = 0
+    var atsPicks = 0
+var atsWins = 0
+var atsLosses = 0
+var atsPushes = 0
+var atsNetUnits = 0.0
 
     for (g in completed) {
         val homeRating = ratings.getOrDefault(g.home, 1500.0)
@@ -357,6 +396,31 @@ private fun loadModelData(): ModelData {
             (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
 
         val actualMargin = g.homeScore!! - g.awayScore!!
+        if (g.date >= VALIDATION_START && g.spreadLine != null) {
+    val edge = predictedMargin - g.spreadLine
+
+    // Only test picks with at least a 1.5-point model edge.
+    if (abs(edge) >= 1.5) {
+        atsPicks++
+
+        when {
+            actualMargin == g.spreadLine -> {
+                atsPushes++
+            }
+
+            (edge > 0.0 && actualMargin > g.spreadLine) ||
+            (edge < 0.0 && actualMargin < g.spreadLine) -> {
+                atsWins++
+                atsNetUnits += 100.0 / 110.0
+            }
+
+            else -> {
+                atsLosses++
+                atsNetUnits -= 1.0
+            }
+        }
+    }
+}
 
         if (g.date >= VALIDATION_START) {
             val error = predictedMargin - actualMargin
@@ -391,14 +455,21 @@ private fun loadModelData(): ModelData {
         processed++
     }
 
-    val validation = Validation(
-        games = tested,
-        marginMae = if (tested > 0) absoluteError / tested else 0.0,
-        marginRmse = if (tested > 0) sqrt(squaredError / tested) else 0.0,
-        winAccuracy = if (decisiveGames > 0)
-            correctWinners.toDouble() / decisiveGames else 0.0,
-        brierScore = if (tested > 0) brierTotal / tested else 0.0
-    )
+    
+val validation = Validation(
+    games = tested,
+    marginMae = if (tested > 0) absoluteError / tested else 0.0,
+    marginRmse = if (tested > 0) sqrt(squaredError / tested) else 0.0,
+    winAccuracy = if (decisiveGames > 0)
+        correctWinners.toDouble() / decisiveGames else 0.0,
+    brierScore = if (tested > 0) brierTotal / tested else 0.0,
+    atsPicks = atsPicks,
+    atsWins = atsWins,
+    atsLosses = atsLosses,
+    atsPushes = atsPushes,
+    atsNetUnits = atsNetUnits
+)
+
 
     val today = LocalDate.now().toString()
     val upcoming = games
