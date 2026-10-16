@@ -7,10 +7,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,6 +21,7 @@ import java.net.URL
 import java.time.LocalDate
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -78,6 +81,9 @@ private fun SpreadLabScreen() {
     var error by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
 
+    // Holds manually entered sportsbook lines while the screen is open.
+    var spreadInputs by remember { mutableStateOf(mapOf<String, String>()) }
+
     LaunchedEffect(refresh) {
         loading = true
         error = ""
@@ -100,7 +106,7 @@ private fun SpreadLabScreen() {
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Black
         )
-        Text("Historical ratings, validation, and game projections")
+        Text("Historical ratings, validation, and spread analysis")
 
         Button(
             onClick = { refresh++ },
@@ -137,61 +143,127 @@ private fun SpreadLabScreen() {
                     Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("WALK-FORWARD VALIDATION",
+                    Text(
+                        "WALK-FORWARD VALIDATION",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold)
+                        fontWeight = FontWeight.Bold
+                    )
                     Text("Games tested: ${model.validation.games}")
                     Text("Margin MAE: ${decimal(model.validation.marginMae)} points")
                     Text("Margin RMSE: ${decimal(model.validation.marginRmse)} points")
                     Text("Winner accuracy: ${pct(model.validation.winAccuracy)}")
                     Text("Win probability Brier score: ${decimal(model.validation.brierScore)}")
                     Text(
-                        "Each game is predicted before its result updates the ratings. " +
-                        "The margin conversion and Elo settings are preliminary. " +
-                        "No sportsbook lines are included, so this is not an against-the-spread record.",
+                        "Each historical game is predicted before its result updates ratings. " +
+                            "Model settings are preliminary; this is not verified betting performance.",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
-            Text("UPCOMING GAME PROJECTIONS",
+            Text(
+                "UPCOMING GAME PROJECTIONS",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold)
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                "Enter the sportsbook's HOME spread for a matchup. " +
+                    "Use a negative number when the home team is favored, " +
+                    "for example -3.5. Use a positive number when it is the underdog."
+            )
 
             if (model.projections.isEmpty()) {
                 Text("No upcoming regular-season games found in the feed.")
             }
 
             model.projections.forEach { p ->
+                val key = "${p.game.date}_${p.game.away}_${p.game.home}"
+                val lineText = spreadInputs[key] ?: ""
+                val vegasHomeSpread = lineText.toDoubleOrNull()
+
                 Card {
                     Column(
                         Modifier.fillMaxWidth().padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("${p.game.away} at ${p.game.home}",
+                        Text(
+                            "${p.game.away} at ${p.game.home}",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold)
+                            fontWeight = FontWeight.Bold
+                        )
                         Text("${p.game.date} | Week ${p.game.week}")
                         HorizontalDivider()
+
                         Text("Home Elo: ${p.homeElo.toInt()} | Away Elo: ${p.awayElo.toInt()}")
                         Text("Home win probability: ${pct(p.homeWin)}")
                         Text("Projected home margin: ${signed(p.margin)} points")
-                        Text("Experimental fair home spread: ${signed(-p.margin)}")
-                        Text(
-                            "Sportsbook lines are not connected. Cover probability and betting edge are not available yet.",
-                            style = MaterialTheme.typography.bodySmall
+                        Text("Model fair home spread: ${signed(-p.margin)}")
+
+                        OutlinedTextField(
+                            value = lineText,
+                            onValueChange = {
+                                spreadInputs = spreadInputs + (key to it)
+                            },
+                            label = { Text("Vegas home spread") },
+                            placeholder = { Text("Example: -3.5") },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Decimal
+                            ),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
+
+                        if (lineText.isNotBlank() && vegasHomeSpread == null) {
+                            Text("Enter a valid number, such as -3.5 or +3.5.")
+                        }
+
+                        if (vegasHomeSpread != null) {
+                            val edge = p.margin + vegasHomeSpread
+                            val sigma = if (model.validation.marginRmse > 0.0) {
+                                model.validation.marginRmse
+                            } else {
+                                13.5
+                            }
+                            val homeCover = normalCdfApprox(edge / sigma)
+                            val awayCover = 1.0 - homeCover
+
+                            HorizontalDivider()
+                            Text("SPREAD COMPARISON", fontWeight = FontWeight.Bold)
+                            Text("Sportsbook home spread: ${signed(vegasHomeSpread)}")
+                            Text("Sportsbook implied home margin: ${signed(-vegasHomeSpread)}")
+                            Text("Model edge toward home: ${signed(edge)} points")
+                            Text("Estimated home cover probability: ${pct(homeCover)}")
+                            Text("Estimated away cover probability: ${pct(awayCover)}")
+
+                            Text(
+                                "Experimental estimate using historical margin RMSE " +
+                                    "(${decimal(sigma)} points) as the uncertainty scale. " +
+                                    "Pushes are not modeled. This is not a verified betting edge.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } else {
+                            Text(
+                                "Enter a real sportsbook line to calculate an experimental cover estimate. " +
+                                    "No sportsbook odds are automatically connected.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
             }
 
-            Text("IMPORTANT LIMITATIONS",
+            Text(
+                "IMPORTANT LIMITATIONS",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold)
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 "This is a basic Elo model, not a proven betting system. " +
-                "It currently omits injuries, quarterback changes, weather, and market odds. " +
-                "Historical results do not guarantee future performance."
+                    "It omits injuries, quarterback changes, weather, and market odds. " +
+                    "Cover probabilities use a rough error approximation and are not yet calibrated " +
+                    "or validated against historical sportsbook spreads. " +
+                    "Historical results do not guarantee future performance."
             )
         }
     }
@@ -277,7 +349,7 @@ private fun loadModelData(): ModelData {
         val homeRating = ratings.getOrDefault(g.home, 1500.0)
         val awayRating = ratings.getOrDefault(g.away, 1500.0)
 
-        // Make the prediction BEFORE using this game's result.
+        // Predict first; this game's result has not been used yet.
         val predictedWin = expectedHomeWin(homeRating, awayRating)
         val predictedMargin =
             (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
@@ -305,7 +377,7 @@ private fun loadModelData(): ModelData {
             }
         }
 
-        // Only now update Elo using the game's actual outcome.
+        // Update ratings only after the prediction is scored.
         val actualHome = when {
             actualMargin > 0.0 -> 1.0
             actualMargin < 0.0 -> 0.0
@@ -351,6 +423,11 @@ private fun loadModelData(): ModelData {
 private fun expectedHomeWin(home: Double, away: Double): Double {
     val difference = home - away + HOME_ADVANTAGE_ELO
     return 1.0 / (1.0 + 10.0.pow(-difference / 400.0))
+}
+
+// Logistic approximation to the standard normal cumulative distribution.
+private fun normalCdfApprox(z: Double): Double {
+    return 1.0 / (1.0 + exp(-1.702 * z))
 }
 
 private fun parseCsvLine(line: String): List<String> {
