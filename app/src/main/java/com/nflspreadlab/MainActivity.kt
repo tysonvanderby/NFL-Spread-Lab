@@ -279,7 +279,7 @@ val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
                         } else {
                             Text(
                                 "Enter a real sportsbook line to calculate an experimental cover estimate. " +
-                                    "No sportsbook odds are automatically connected.",
+                                  "The feed spread may not be the latest Vegas line. Verify it before relying on the cover estimate.",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
