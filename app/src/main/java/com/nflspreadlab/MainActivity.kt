@@ -212,7 +212,8 @@ Text(
 
             model.projections.forEach { p ->
                 val key = "${p.game.date}_${p.game.away}_${p.game.home}"
-                val lineText = spreadInputs[key] ?: ""
+                val autoHomeSpread = p.game.spreadLine?.let { -it }
+val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
                 val vegasHomeSpread = lineText.toDoubleOrNull()
 
                 Card {
