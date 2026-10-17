@@ -239,7 +239,7 @@ val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
                             onValueChange = {
                                 spreadInputs = spreadInputs + (key to it)
                             },
-                            label = { Text("Vegas home spread") },
+                          label = { Text("Feed spread / Vegas override") },
                             placeholder = { Text("Example: -3.5") },
                           keyboardOptions = KeyboardOptions(
     keyboardType = KeyboardType.Text
