@@ -96,6 +96,8 @@ private fun SpreadLabScreen() {
     var refresh by remember { mutableIntStateOf(0) }
     var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
 var oddsError by remember { mutableStateOf("") }
+var selectedPage by remember { mutableStateOf("Dashboard") }
+
 
     // Holds manually entered sportsbook lines while the screen is open.
     var spreadInputs by remember { mutableStateOf(mapOf<String, String>()) }
@@ -133,6 +135,33 @@ LaunchedEffect(refresh) {
             fontWeight = FontWeight.Black
         )
         Text("Historical ratings, validation, and spread analysis")
+        
+Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(6.dp)
+) {
+    listOf("Dashboard", "Matchups").forEach { page ->
+        FilterChip(
+            selected = selectedPage == page,
+            onClick = { selectedPage = page },
+            label = { Text(page) }
+        )
+    }
+}
+
+Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.spacedBy(6.dp)
+) {
+    listOf("Live Odds", "Performance").forEach { page ->
+        FilterChip(
+            selected = selectedPage == page,
+            onClick = { selectedPage = page },
+            label = { Text(page) }
+        )
+    }
+}
+
 
         Button(
             onClick = { refresh++ },
@@ -150,6 +179,9 @@ LaunchedEffect(refresh) {
         }
 
         data?.let { model ->
+            
+if (selectedPage == "Dashboard") {
+
             Card {
                 Column(
                     Modifier.fillMaxWidth().padding(16.dp),
@@ -163,12 +195,17 @@ LaunchedEffect(refresh) {
                     Text("Validation period: 2015 onward")
                 }
             }
+        }
+
 
             Card {
                 Column(
                     Modifier.fillMaxWidth().padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    
+if (selectedPage == "Performance") {
+
                     Text(
                         "WALK-FORWARD VALIDATION",
                         style = MaterialTheme.typography.titleMedium,
@@ -213,7 +250,9 @@ Text(
                     )
                 }
             }
-            
+        }
+
+if (selectedPage == "Live Odds") {            
 Text(
     "LIVE SPORTSBOOK ODDS",
     style = MaterialTheme.typography.titleLarge,
@@ -250,6 +289,9 @@ if (oddsError.isNotBlank()) {
         }
     }
 }
+}
+
+if (selectedPage == "Matchups") {
 
             Text(
                 "UPCOMING GAME PROJECTIONS",
@@ -343,7 +385,9 @@ val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
                     }
                 }
             }
+        } 
 
+if (selectedPage == "Performance") {
             Text(
                 "IMPORTANT LIMITATIONS",
                 style = MaterialTheme.typography.titleMedium,
@@ -358,6 +402,7 @@ val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
             )
         }
     }
+}
 }
 
 private fun loadLiveOdds(): List<LiveOddsGame> {
