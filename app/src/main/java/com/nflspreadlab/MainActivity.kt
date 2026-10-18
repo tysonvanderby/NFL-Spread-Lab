@@ -47,14 +47,17 @@ private data class Projection(
     val homeWin: Double,
     val margin: Double
 )
+
 private data class LiveOddsGame(
     val date: String,
     val away: String,
     val home: String,
     val spread: String,
     val total: String,
-    val moneyline: String
+    val moneyline: String,
+    val homeSpread: Double? = null
 )
+
 
 private data class Validation(
     val games: Int,
@@ -484,6 +487,33 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
         return parts.joinToString(" | ").ifBlank { "Not available" }
     }
 
+    fun extractHomeSpread(
+        items: org.json.JSONArray?,
+        homeTeam: String,
+        awayTeam: String
+    ): Double? {
+        if (items == null) return null
+
+        for (i in 0 until items.length()) {
+            val item = items.optJSONObject(i) ?: continue
+            val selection = item.optString("selection", "").trim()
+            val line = item.opt("line")
+                ?.toString()
+                ?.toDoubleOrNull()
+                ?: continue
+
+            when {
+                selection.equals(homeTeam, ignoreCase = true) ->
+                    return line
+
+                selection.equals(awayTeam, ignoreCase = true) ->
+                    return -line
+            }
+        }
+
+        return null
+    }
+
     val result = mutableListOf<LiveOddsGame>()
 
     for (i in 0 until events.length()) {
@@ -498,9 +528,15 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
                 home = event.optString("homeTeam", "Home team"),
                 spread = marketSummary(event.optJSONArray("spread")),
                 total = marketSummary(event.optJSONArray("total")),
-                moneyline = marketSummary(event.optJSONArray("moneyline"))
-            )
+                moneyline = marketSummary(event.optJSONArray("moneyline")),
+                homeSpread = extractHomeSpread(
+            event.optJSONArray("spread"),
+            event.optString("homeTeam", ""),
+            event.optString("awayTeam", "")
         )
+    )
+)
+
     }
 
     return result
