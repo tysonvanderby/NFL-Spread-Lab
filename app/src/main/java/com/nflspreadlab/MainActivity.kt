@@ -550,13 +550,17 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
                 ?.toDoubleOrNull()
                 ?: continue
 
-            when {
-                selection.equals(homeTeam, ignoreCase = true) ->
-                    return line
+            val normalizedSelection = normalizeTeamName(selection)
+val normalizedHome = normalizeTeamName(homeTeam)
+val normalizedAway = normalizeTeamName(awayTeam)
 
-                selection.equals(awayTeam, ignoreCase = true) ->
-                    return -line
-            }
+when {
+    normalizedSelection == normalizedHome ->
+        return line
+
+    normalizedSelection == normalizedAway ->
+        return -line
+}
         }
 
         return null
