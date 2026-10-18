@@ -314,7 +314,13 @@ if (selectedPage == "Matchups") {
 
             model.projections.forEach { p ->
                 val key = "${p.game.date}_${p.game.away}_${p.game.home}"
-                val autoHomeSpread = p.game.spreadLine?.let { -it }
+                
+val matchingOdds = liveOdds.firstOrNull {
+    normalizeTeamName(it.home) == normalizeTeamName(p.game.home) &&
+    normalizeTeamName(it.away) == normalizeTeamName(p.game.away)
+}
+val autoHomeSpread = matchingOdds?.homeSpread
+
 val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
                 val vegasHomeSpread = lineText.toDoubleOrNull()
 
@@ -483,6 +489,48 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
                     }
             )
         }
+        
+private fun normalizeTeamName(name: String): String {
+    val aliases = mapOf(
+        "Arizona Cardinals" to "ARI",
+        "Atlanta Falcons" to "ATL",
+        "Baltimore Ravens" to "BAL",
+        "Buffalo Bills" to "BUF",
+        "Carolina Panthers" to "CAR",
+        "Chicago Bears" to "CHI",
+        "Cincinnati Bengals" to "CIN",
+        "Cleveland Browns" to "CLE",
+        "Dallas Cowboys" to "DAL",
+        "Denver Broncos" to "DEN",
+        "Detroit Lions" to "DET",
+        "Green Bay Packers" to "GB",
+        "Houston Texans" to "HOU",
+        "Indianapolis Colts" to "IND",
+        "Jacksonville Jaguars" to "JAX",
+        "Kansas City Chiefs" to "KC",
+        "Las Vegas Raiders" to "LV",
+        "Los Angeles Chargers" to "LAC",
+        "Los Angeles Rams" to "LA",
+        "Miami Dolphins" to "MIA",
+        "Minnesota Vikings" to "MIN",
+        "New England Patriots" to "NE",
+        "New Orleans Saints" to "NO",
+        "New York Giants" to "NYG",
+        "New York Jets" to "NYJ",
+        "Philadelphia Eagles" to "PHI",
+        "Pittsburgh Steelers" to "PIT",
+        "San Francisco 49ers" to "SF",
+        "Seattle Seahawks" to "SEA",
+        "Tampa Bay Buccaneers" to "TB",
+        "Tennessee Titans" to "TEN",
+        "Washington Commanders" to "WAS"
+    )
+
+    return aliases.entries.firstOrNull {
+        it.key.equals(name.trim(), ignoreCase = true)
+    }?.value ?: name.trim().uppercase(Locale.US)
+}
+
 
         return parts.joinToString(" | ").ifBlank { "Not available" }
     }
