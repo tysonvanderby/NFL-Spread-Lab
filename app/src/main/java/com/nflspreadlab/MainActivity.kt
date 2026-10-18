@@ -29,6 +29,7 @@ private const val ELO_K = 20.0
 private const val HOME_ADVANTAGE_ELO = 55.0
 private const val ELO_PER_POINT = 25.0
 private const val VALIDATION_START = "2015-01-01"
+private fun normalizeTeamName(name: String): String {
 
 private data class Game(
     val date: String,
@@ -490,7 +491,6 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
             )
         }
         
-private fun normalizeTeamName(name: String): String {
     val aliases = mapOf(
         "Arizona Cardinals" to "ARI",
         "Atlanta Falcons" to "ATL",
