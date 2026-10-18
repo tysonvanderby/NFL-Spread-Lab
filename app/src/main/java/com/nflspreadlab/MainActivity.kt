@@ -30,6 +30,46 @@ private const val HOME_ADVANTAGE_ELO = 55.0
 private const val ELO_PER_POINT = 25.0
 private const val VALIDATION_START = "2015-01-01"
 private fun normalizeTeamName(name: String): String {
+    val aliases = mapOf(
+        "Arizona Cardinals" to "ARI",
+        "Atlanta Falcons" to "ATL",
+        "Baltimore Ravens" to "BAL",
+        "Buffalo Bills" to "BUF",
+        "Carolina Panthers" to "CAR",
+        "Chicago Bears" to "CHI",
+        "Cincinnati Bengals" to "CIN",
+        "Cleveland Browns" to "CLE",
+        "Dallas Cowboys" to "DAL",
+        "Denver Broncos" to "DEN",
+        "Detroit Lions" to "DET",
+        "Green Bay Packers" to "GB",
+        "Houston Texans" to "HOU",
+        "Indianapolis Colts" to "IND",
+        "Jacksonville Jaguars" to "JAX",
+        "Kansas City Chiefs" to "KC",
+        "Las Vegas Raiders" to "LV",
+        "Los Angeles Chargers" to "LAC",
+        "Los Angeles Rams" to "LA",
+        "Miami Dolphins" to "MIA",
+        "Minnesota Vikings" to "MIN",
+        "New England Patriots" to "NE",
+        "New Orleans Saints" to "NO",
+        "New York Giants" to "NYG",
+        "New York Jets" to "NYJ",
+        "Philadelphia Eagles" to "PHI",
+        "Pittsburgh Steelers" to "PIT",
+        "San Francisco 49ers" to "SF",
+        "Seattle Seahawks" to "SEA",
+        "Tampa Bay Buccaneers" to "TB",
+        "Tennessee Titans" to "TEN",
+        "Washington Commanders" to "WAS"
+    )
+
+    return aliases.entries.firstOrNull {
+        it.key.equals(name.trim(), ignoreCase = true)
+    }?.value ?: name.trim().uppercase(Locale.US)
+}
+
 
 private data class Game(
     val date: String,
@@ -491,46 +531,6 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
             )
         }
         
-    val aliases = mapOf(
-        "Arizona Cardinals" to "ARI",
-        "Atlanta Falcons" to "ATL",
-        "Baltimore Ravens" to "BAL",
-        "Buffalo Bills" to "BUF",
-        "Carolina Panthers" to "CAR",
-        "Chicago Bears" to "CHI",
-        "Cincinnati Bengals" to "CIN",
-        "Cleveland Browns" to "CLE",
-        "Dallas Cowboys" to "DAL",
-        "Denver Broncos" to "DEN",
-        "Detroit Lions" to "DET",
-        "Green Bay Packers" to "GB",
-        "Houston Texans" to "HOU",
-        "Indianapolis Colts" to "IND",
-        "Jacksonville Jaguars" to "JAX",
-        "Kansas City Chiefs" to "KC",
-        "Las Vegas Raiders" to "LV",
-        "Los Angeles Chargers" to "LAC",
-        "Los Angeles Rams" to "LA",
-        "Miami Dolphins" to "MIA",
-        "Minnesota Vikings" to "MIN",
-        "New England Patriots" to "NE",
-        "New Orleans Saints" to "NO",
-        "New York Giants" to "NYG",
-        "New York Jets" to "NYJ",
-        "Philadelphia Eagles" to "PHI",
-        "Pittsburgh Steelers" to "PIT",
-        "San Francisco 49ers" to "SF",
-        "Seattle Seahawks" to "SEA",
-        "Tampa Bay Buccaneers" to "TB",
-        "Tennessee Titans" to "TEN",
-        "Washington Commanders" to "WAS"
-    )
-
-    return aliases.entries.firstOrNull {
-        it.key.equals(name.trim(), ignoreCase = true)
-    }?.value ?: name.trim().uppercase(Locale.US)
-}
-
 
         return parts.joinToString(" | ").ifBlank { "Not available" }
     }
