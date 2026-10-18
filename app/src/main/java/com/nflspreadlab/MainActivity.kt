@@ -536,35 +536,46 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
     }
 
     fun extractHomeSpread(
-        items: org.json.JSONArray?,
-        homeTeam: String,
-        awayTeam: String
-    ): Double? {
-        if (items == null) return null
+    items: org.json.JSONArray?,
+    homeTeam: String,
+    awayTeam: String
+): Double? {
+    if (items == null) return null
 
-        for (i in 0 until items.length()) {
-            val item = items.optJSONObject(i) ?: continue
-            val selection = item.optString("selection", "").trim()
-            val line = item.opt("line")
-                ?.toString()
+    for (i in 0 until items.length()) {
+        val item = items.optJSONObject(i) ?: continue
+        val selection = item.optString("selection", "").trim()
+
+        val line = item.opt("line")
+            ?.toString()
+            ?.toDoubleOrNull()
+            ?: Regex("""([+-]?\d+(?:\.\d+)?)\s*$""")
+                .find(selection)
+                ?.groupValues
+                ?.get(1)
                 ?.toDoubleOrNull()
-                ?: continue
+            ?: continue
 
-            val normalizedSelection = normalizeTeamName(selection)
-val normalizedHome = normalizeTeamName(homeTeam)
-val normalizedAway = normalizeTeamName(awayTeam)
+        val teamName = selection.replace(
+            Regex("""\s+[+-]?\d+(?:\.\d+)?\s*$"""),
+            ""
+        ).trim()
 
-when {
-    normalizedSelection == normalizedHome ->
-        return line
+        val normalizedSelection = normalizeTeamName(teamName)
+        val normalizedHome = normalizeTeamName(homeTeam)
+        val normalizedAway = normalizeTeamName(awayTeam)
 
-    normalizedSelection == normalizedAway ->
-        return -line
-}
+        when {
+            normalizedSelection == normalizedHome ->
+                return line
+
+            normalizedSelection == normalizedAway ->
+                return -line
         }
-
-        return null
     }
+
+    return null
+}
 
     val result = mutableListOf<LiveOddsGame>()
 
