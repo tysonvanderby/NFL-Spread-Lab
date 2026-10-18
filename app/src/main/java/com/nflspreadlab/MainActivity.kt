@@ -47,6 +47,14 @@ private data class Projection(
     val homeWin: Double,
     val margin: Double
 )
+private data class LiveOddsGame(
+    val date: String,
+    val away: String,
+    val home: String,
+    val spread: String,
+    val total: String,
+    val moneyline: String
+)
 
 private data class Validation(
     val games: Int,
@@ -86,20 +94,32 @@ private fun SpreadLabScreen() {
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
+    var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
+var oddsError by remember { mutableStateOf("") }
 
     // Holds manually entered sportsbook lines while the screen is open.
     var spreadInputs by remember { mutableStateOf(mapOf<String, String>()) }
 
-    LaunchedEffect(refresh) {
-        loading = true
-        error = ""
-        try {
-            data = withContext(Dispatchers.IO) { loadModelData() }
-        } catch (e: Exception) {
-            error = e.message ?: "Unable to load NFL data."
-        }
-        loading = false
+    
+LaunchedEffect(refresh) {
+    loading = true
+    error = ""
+    try {
+        data = withContext(Dispatchers.IO) { loadModelData() }
+    } catch (e: Exception) {
+        error = e.message ?: "Unable to load NFL data."
     }
+
+    oddsError = ""
+    try {
+        liveOdds = withContext(Dispatchers.IO) { loadLiveOdds() }
+    } catch (e: Exception) {
+        oddsError = e.message ?: "Unable to load live sportsbook odds."
+    }
+
+    loading = false
+}
+
 
     Column(
         Modifier.fillMaxSize()
@@ -193,6 +213,43 @@ Text(
                     )
                 }
             }
+            
+Text(
+    "LIVE SPORTSBOOK ODDS",
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.Bold
+)
+
+Text("Source: TheRundown API. Books shown when available: DraftKings, BetMGM, and FanDuel.")
+
+if (oddsError.isNotBlank()) {
+    Text("Live odds unavailable: $oddsError")
+} else if (liveOdds.isEmpty()) {
+    Text("No upcoming odds were returned. Try refreshing later.")
+} else {
+    Text("Upcoming games returned: ${liveOdds.size}")
+
+    liveOdds.forEach { odds ->
+        Card {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    "${odds.away} at ${odds.home}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(odds.date)
+                Text("Spread: ${odds.spread}")
+                Text("Total: ${odds.total}")
+                Text("Moneyline: ${odds.moneyline}")
+            }
+        }
+    }
+}
 
             Text(
                 "UPCOMING GAME PROJECTIONS",
@@ -301,6 +358,107 @@ val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
             )
         }
     }
+}
+
+private fun loadLiveOdds(): List<LiveOddsGame> {
+    val connection = (URL("https://nfl-spread-lab-api.onrender.com/consensus")
+        .openConnection() as HttpURLConnection)
+
+    connection.connectTimeout = 20000
+    connection.readTimeout = 45000
+    connection.setRequestProperty("User-Agent", "NFL-Spread-Lab-Android")
+
+    val body = try {
+        val status = connection.responseCode
+        val stream = if (status in 200..299) {
+            connection.inputStream
+        } else {
+            connection.errorStream
+        }
+        val response = stream.bufferedReader().use { it.readText() }
+
+        if (status !in 200..299) {
+            error("Odds API returned HTTP $status: $response")
+        }
+        response
+    } finally {
+        connection.disconnect()
+    }
+
+    val root = org.json.JSONObject(body)
+    val events = root.optJSONArray("events") ?: org.json.JSONArray()
+
+    fun marketSummary(items: org.json.JSONArray?): String {
+        if (items == null || items.length() == 0) {
+            return "Not available"
+        }
+
+        val parts = mutableListOf<String>()
+
+        for (i in 0 until items.length()) {
+            val item = items.optJSONObject(i) ?: continue
+            val selection = item.optString("selection", "Line")
+            val lineValue = item.opt("line")
+
+            val line = if (
+                lineValue == null ||
+                lineValue == org.json.JSONObject.NULL
+            ) {
+                ""
+            } else {
+                " " + lineValue.toString()
+            }
+
+            val prices = item.optJSONArray("prices") ?: org.json.JSONArray()
+            val bookParts = mutableListOf<String>()
+
+            for (j in 0 until prices.length()) {
+                val book = prices.optJSONObject(j) ?: continue
+                val name = book.optString("sportsbook", "")
+                val price = book.opt("price")
+
+                if (
+                    name.isNotBlank() &&
+                    price != null &&
+                    price != org.json.JSONObject.NULL
+                ) {
+                    bookParts.add("$name $price")
+                }
+            }
+
+            parts.add(
+                selection + line +
+                    if (bookParts.isNotEmpty()) {
+                        " (" + bookParts.joinToString(", ") + ")"
+                    } else {
+                        ""
+                    }
+            )
+        }
+
+        return parts.joinToString(" | ").ifBlank { "Not available" }
+    }
+
+    val result = mutableListOf<LiveOddsGame>()
+
+    for (i in 0 until events.length()) {
+        val event = events.optJSONObject(i) ?: continue
+
+        result.add(
+            LiveOddsGame(
+                date = event.optString("date", "Date unavailable")
+                    .replace("T", " ")
+                    .take(16),
+                away = event.optString("awayTeam", "Away team"),
+                home = event.optString("homeTeam", "Home team"),
+                spread = marketSummary(event.optJSONArray("spread")),
+                total = marketSummary(event.optJSONArray("total")),
+                moneyline = marketSummary(event.optJSONArray("moneyline"))
+            )
+        )
+    }
+
+    return result
 }
 
 private fun loadModelData(): ModelData {
