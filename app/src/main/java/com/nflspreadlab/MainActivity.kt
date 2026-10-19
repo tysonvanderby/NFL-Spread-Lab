@@ -336,6 +336,100 @@ if (oddsError.isNotBlank()) {
 }
 }
 
+if (selectedPage == "Best Bets") {
+    Text(
+        "BEST BETS",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
+
+    Text(
+        "Model vs. sportsbook spread edges. " +
+            "Minimum qualifying edge: 2.0 points."
+    )
+
+    val bestBets = model.projections.mapNotNull { p ->
+        val matchingOdds = liveOdds.firstOrNull {
+            normalizeTeamName(it.home) ==
+                normalizeTeamName(p.game.home) &&
+            normalizeTeamName(it.away) ==
+                normalizeTeamName(p.game.away)
+        }
+
+        val sportsbookHomeSpread = matchingOdds?.homeSpread
+
+        if (sportsbookHomeSpread == null) {
+            null
+        } else {
+            val edge = p.margin + sportsbookHomeSpread
+
+            if (kotlin.math.abs(edge) >= 2.0) {
+                p to edge
+            } else {
+                null
+            }
+        }
+    }.sortedByDescending { kotlin.math.abs(it.second) }
+
+    if (bestBets.isEmpty()) {
+        Text(
+            "No qualifying bets found. Check that sportsbook " +
+                "spreads are available for upcoming matchups."
+        )
+    }
+
+    bestBets.forEach { (p, edge) ->
+        val sigma =
+            if (model.validation.marginRmse > 0.0) {
+                model.validation.marginRmse
+            } else {
+                13.5
+            }
+
+        val homeCover = normalCdfApprox(edge / sigma)
+        val isHomeBet = edge > 0
+        val coverProbability =
+            if (isHomeBet) homeCover else 1.0 - homeCover
+
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement =
+                    Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "${p.game.away} at ${p.game.home}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    "BET: ${
+                        if (isHomeBet) p.game.home
+                        else p.game.away
+                    } against the spread"
+                )
+
+                Text("Model edge: ${signed(kotlin.math.abs(edge))} points")
+
+                Text(
+                    "Estimated cover probability: " +
+                        pct(coverProbability)
+                )
+
+                Text(
+                    "Week ${p.game.week} | ${p.game.date}"
+                )
+            }
+        }
+    }
+}
+
+
 if (selectedPage == "Matchups") {
 
             Text(
