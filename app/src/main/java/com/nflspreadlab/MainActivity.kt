@@ -537,47 +537,49 @@ private fun loadLiveOdds(): List<LiveOddsGame> {
         return parts.joinToString(" | ").ifBlank { "Not available" }
     }
 
-    fun extractHomeSpread(
+    
+fun extractHomeSpread(
     items: org.json.JSONArray?,
     homeTeam: String,
     awayTeam: String
 ): Double? {
     if (items == null) return null
 
+    val normalizedHome = normalizeTeamName(homeTeam)
+    val normalizedAway = normalizeTeamName(awayTeam)
+
     for (i in 0 until items.length()) {
         val item = items.optJSONObject(i) ?: continue
         val selection = item.optString("selection", "").trim()
+        if (selection.isBlank()) continue
 
-        val line = item.opt("line")
-            ?.toString()
-            ?.toDoubleOrNull()
-            ?: Regex("""([+-]?\d+(?:\.\d+)?)\s*$""")
-                .find(selection)
-                ?.groupValues
-                ?.get(1)
+        // Prefer a signed spread embedded in the selection name.
+        val selectionLine = Regex(
+            """\(?\s*([+-]?\d+(?:\.\d+)?)\s*\)?\s*$"""
+        ).find(selection)
+
+        val line = selectionLine?.groupValues?.get(1)?.toDoubleOrNull()
+            ?: item.opt("line")
+                ?.toString()
                 ?.toDoubleOrNull()
             ?: continue
 
         val teamName = selection.replace(
-            Regex("""\s+[+-]?\d+(?:\.\d+)?\s*$"""),
+            Regex("""\s*\(?[+-]?\d+(?:\.\d+)?\)?\s*$"""),
             ""
         ).trim()
 
-        val normalizedSelection = normalizeTeamName(teamName)
-        val normalizedHome = normalizeTeamName(homeTeam)
-        val normalizedAway = normalizeTeamName(awayTeam)
+        val selectedTeam = normalizeTeamName(teamName)
 
-        when {
-            normalizedSelection == normalizedHome ->
-                return line
-
-            normalizedSelection == normalizedAway ->
-                return -line
+        when (selectedTeam) {
+            normalizedHome -> return line
+            normalizedAway -> return -line
         }
     }
 
     return null
 }
+
 
     val result = mutableListOf<LiveOddsGame>()
 
