@@ -198,7 +198,7 @@ Row(
     modifier = Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(6.dp)
 ) {
-    listOf("Live Odds", "Performance").forEach { page ->
+    listOf("Live Odds", "Performance", "Best Bets").forEach { page ->
         FilterChip(
             selected = selectedPage == page,
             onClick = { selectedPage = page },
