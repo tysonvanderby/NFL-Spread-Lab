@@ -362,7 +362,9 @@ val matchingOdds = liveOdds.firstOrNull {
 }
 val autoHomeSpread = matchingOdds?.homeSpread
 
-val lineText = spreadInputs[key] ?: (autoHomeSpread?.toString() ?: "")
+val lineText = spreadInputs[key]
+    ?.takeIf { it.isNotBlank() }
+    ?: (autoHomeSpread?.toString() ?: "")
                 val vegasHomeSpread = lineText.toDoubleOrNull()
 
                 Card {
