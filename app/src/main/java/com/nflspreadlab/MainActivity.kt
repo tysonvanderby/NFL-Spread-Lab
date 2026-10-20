@@ -941,3 +941,101 @@ private fun pct(value: Double): String =
 
 private fun decimal(value: Double): String =
     String.format(Locale.US, "%.3f", value)
+
+private fun saveBestBets(picks: List<org.json.JSONObject>): String {
+    val connection = (URL(
+        "https://nfl-spread-lab-api.onrender.com/best-bets/generate"
+    ).openConnection() as HttpURLConnection)
+
+    connection.requestMethod = "POST"
+    connection.connectTimeout = 20000
+    connection.readTimeout = 45000
+    connection.doOutput = true
+    connection.setRequestProperty(
+        "Content-Type",
+        "application/json; charset=utf-8"
+    )
+
+    val payload = org.json.JSONObject().put(
+        "picks",
+        org.json.JSONArray().apply {
+            picks.forEach { put(it) }
+        }
+    )
+
+    try {
+        connection.outputStream.use { output ->
+            output.write(payload.toString().toByteArray(Charsets.UTF_8))
+        }
+
+        val status = connection.responseCode
+        val stream = if (status in 200..299) {
+            connection.inputStream
+        } else {
+            connection.errorStream
+        }
+
+        val response = stream?.bufferedReader()?.use {
+            it.readText()
+        } ?: ""
+
+        if (status !in 200..299) {
+            error("Best Bets API returned HTTP $status: $response")
+        }
+
+        return response
+    } finally {
+        connection.disconnect()
+    }
+}
+
+private fun buildBestBetPayload(
+    projections: List<Projection>,
+    oddsGames: List<LiveOddsGame>
+): List<org.json.JSONObject> {
+    return projections.mapNotNull { p ->
+        val matchingOdds = oddsGames.firstOrNull {
+            normalizeTeamName(it.home) ==
+                normalizeTeamName(p.game.home) &&
+            normalizeTeamName(it.away) ==
+                normalizeTeamName(p.game.away)
+        }
+
+        val homeSpread = matchingOdds?.homeSpread
+            ?: return@mapNotNull null
+
+        val edge = p.margin + homeSpread
+
+        if (kotlin.math.abs(edge) < 2.0) {
+            return@mapNotNull null
+        }
+
+        val isHomeBet = edge > 0.0
+        val selection = if (isHomeBet) {
+            p.game.home
+        } else {
+            p.game.away
+        }
+
+        val selectedLine = if (isHomeBet) {
+            homeSpread
+        } else {
+            -homeSpread
+        }
+
+        val eventId =
+            "${p.game.date}_${normalizeTeamName(p.game.away)}_" +
+            normalizeTeamName(p.game.home)
+
+        org.json.JSONObject()
+            .put("eventId", eventId)
+            .put("date", p.game.date)
+            .put("awayTeam", p.game.away)
+            .put("homeTeam", p.game.home)
+            .put("market", "spread")
+            .put("selection", selection)
+            .put("line", selectedLine)
+            .put("odds", -110)
+            .put("modelEdge", edge)
+    }
+}
