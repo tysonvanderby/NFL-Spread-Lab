@@ -141,6 +141,7 @@ private fun SpreadLabScreen() {
     var refresh by remember { mutableIntStateOf(0) }
     var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
 var oddsError by remember { mutableStateOf("") }
+var bestBetsSyncMessage by remember { mutableStateOf("") }
 var selectedPage by remember { mutableStateOf("Dashboard") }
 
 
@@ -163,6 +164,36 @@ LaunchedEffect(refresh) {
     } catch (e: Exception) {
         oddsError = e.message ?: "Unable to load live sportsbook odds."
     }
+
+        try {
+            val currentModel = data
+            val currentOdds = liveOdds
+
+            if (currentModel != null && currentOdds.isNotEmpty()) {
+                val picks = buildBestBetPayload(
+                    currentModel.projections,
+                    currentOdds
+                )
+
+                if (picks.isNotEmpty()) {
+                    withContext(Dispatchers.IO) {
+                        saveBestBets(picks)
+                    }
+
+                    bestBetsSyncMessage =
+                        "Sent ${picks.size} qualifying picks to tracking."
+                } else {
+                    bestBetsSyncMessage =
+                        "No qualifying picks to sync."
+                }
+            } else {
+                bestBetsSyncMessage =
+                    "Live odds unavailable; picks not synced."
+            }
+        } catch (e: Exception) {
+            bestBetsSyncMessage =
+                "Best Bets sync failed: ${e.message ?: "Unknown error"}"
+        }
 
     loading = false
 }
