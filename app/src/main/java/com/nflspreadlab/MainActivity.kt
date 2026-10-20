@@ -1076,3 +1076,37 @@ private fun buildBestBetPayload(
             .put("modelEdge", edge)
     }
 }
+
+
+private suspend fun loadBestBetsStats(): org.json.JSONObject {
+    return withContext(Dispatchers.IO) {
+        val connection = (URL(
+            "https://nfl-spread-lab-api.onrender.com/best-bets/stats"
+        ).openConnection() as HttpURLConnection)
+
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 20000
+        connection.readTimeout = 45000
+
+        try {
+            val status = connection.responseCode
+            val stream = if (status in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            }
+
+            val response = stream?.bufferedReader()?.use {
+                it.readText()
+            } ?: ""
+
+            if (status !in 200..299) {
+                error("Stats API returned HTTP $status: $response")
+            }
+
+            org.json.JSONObject(response)
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
