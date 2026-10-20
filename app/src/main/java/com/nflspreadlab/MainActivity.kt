@@ -142,6 +142,9 @@ private fun SpreadLabScreen() {
     var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
 var oddsError by remember { mutableStateOf("") }
 var bestBetsSyncMessage by remember { mutableStateOf("") }
+var performanceStats by remember {
+    mutableStateOf<org.json.JSONObject?>(null)
+}
 var selectedPage by remember { mutableStateOf("Dashboard") }
 
 
