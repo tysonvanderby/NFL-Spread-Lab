@@ -378,6 +378,12 @@ if (selectedPage == "Best Bets") {
         "Model vs. sportsbook spread edges. " +
             "Minimum qualifying edge: 2.0 points."
     )
+    
+Text(
+    bestBetsSyncMessage,
+    style = MaterialTheme.typography.bodySmall
+)
+
 
     val bestBets = model.projections.mapNotNull { p ->
         val matchingOdds = liveOdds.firstOrNull {
