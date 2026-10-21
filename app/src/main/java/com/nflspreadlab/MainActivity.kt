@@ -461,6 +461,9 @@ Text(
     style = MaterialTheme.typography.bodySmall
 )
 
+Text(
+    "Saved picks from backend: ${savedBestBets?.length() ?: "Not loaded"}"
+)
 
     val bestBets = model.projections.mapNotNull { p ->
         val matchingOdds = liveOdds.firstOrNull {
