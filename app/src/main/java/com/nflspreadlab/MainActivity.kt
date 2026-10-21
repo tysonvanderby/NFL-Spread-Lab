@@ -1196,7 +1196,7 @@ val validation = Validation(
     atsNetUnits = atsNetUnits
 )
 
-
+val today = LocalDate.now().toString()
     val today = LocalDate.now().toString()
     val upcoming = games
         .filter {
@@ -1218,9 +1218,11 @@ val eloMargin =
 
 val leagueAverage = games
     .filter {
-        it.date < g.date &&
-            it.homeScore != null &&
-            it.awayScore != null
+       
+nflSeason(it.date) == nflSeason(g.date) &&
+    it.date < g.date &&
+    it.homeScore != null &&
+    it.awayScore != null
     }
     .flatMap { listOf(it.homeScore!!, it.awayScore!!) }
     .average()
@@ -1236,9 +1238,11 @@ val recentScores = mutableMapOf<String, MutableList<RecentGame>>()
 
 games
     .filter {
-        it.date < g.date &&
-            it.homeScore != null &&
-            it.awayScore != null
+        
+nflSeason(it.date) == nflSeason(g.date) &&
+    it.date < g.date &&
+    it.homeScore != null &&
+    it.awayScore != null
     }
     .sortedByDescending { it.date }
     .forEach { game ->
