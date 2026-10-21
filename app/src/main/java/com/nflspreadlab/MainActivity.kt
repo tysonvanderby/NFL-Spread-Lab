@@ -820,7 +820,11 @@ fun extractHomeSpread(
 
     return result
 }
-
+private data class TeamRecentStats(
+    val pointsFor: Double,
+    val pointsAgainst: Double,
+    val games: Int
+)
 private fun loadModelData(): ModelData {
     val url = URL(
         "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
@@ -892,6 +896,8 @@ spreadLine = row[spreadI].trim().trim('"').toDoubleOrNull()
         .sortedBy { it.date }
 
     val ratings = mutableMapOf<String, Double>()
+    val recentScores =
+    mutableMapOf<String, MutableList<Pair<Double, Double>>>()
     var processed = 0
     var tested = 0
     var absoluteError = 0.0
@@ -913,7 +919,24 @@ var atsNetUnits = 0.0
         val predictedWin = expectedHomeWin(homeRating, awayRating)
         val predictedMargin =
             (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
+// Candidate model: recent offense versus recent defense.
+// Only previously completed games are included.
+fun recentAverage(team: String, index: Int): Double {
+    val scores = recentScores[team].orEmpty()
+    if (scores.isEmpty()) return 22.0
 
+    return scores.map { it.component(index) }.average()
+}
+
+val homeRecentOffense = recentAverage(g.home, 0)
+val homeRecentDefense = recentAverage(g.home, 1)
+val awayRecentOffense = recentAverage(g.away, 0)
+val awayRecentDefense = recentAverage(g.away, 1)
+
+val candidateMargin =
+    ((homeRecentOffense + awayRecentDefense) / 2.0) -
+    ((awayRecentOffense + homeRecentDefense) / 2.0) +
+    2.0
         val actualMargin = g.homeScore!! - g.awayScore!!
         if (g.date >= VALIDATION_START && g.spreadLine != null) {
     val edge = predictedMargin - g.spreadLine
