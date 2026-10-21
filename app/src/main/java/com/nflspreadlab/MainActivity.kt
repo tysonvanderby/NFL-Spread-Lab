@@ -1052,15 +1052,19 @@ recordRecentScore(g.away, g.awayScore!!, g.homeScore!!)
 processed++
     }
 
-    
+
 val validation = Validation(
     games = tested,
     marginMae = if (tested > 0) absoluteError / tested else 0.0,
     marginRmse = if (tested > 0) sqrt(squaredError / tested) else 0.0,
     candidateMarginMae = if (candidateTested > 0)
-    candidateAbsoluteError / candidateTested else 0.0,
-candidateMarginRmse = if (candidateTested > 0)
-    sqrt(candidateSquaredError / candidateTested) else 0.0,
+        candidateAbsoluteError / candidateTested else 0.0,
+    candidateMarginRmse = if (candidateTested > 0)
+        sqrt(candidateSquaredError / candidateTested) else 0.0,
+    combinedMarginMae = if (combinedTested > 0)
+        combinedAbsoluteError / combinedTested else 0.0,
+    combinedMarginRmse = if (combinedTested > 0)
+        sqrt(combinedSquaredError / combinedTested) else 0.0,
     winAccuracy = if (decisiveGames > 0)
         correctWinners.toDouble() / decisiveGames else 0.0,
     brierScore = if (tested > 0) brierTotal / tested else 0.0,
