@@ -1071,8 +1071,39 @@ fun recordRecentScore(
     }
 }
 
+fun recordOpponentRecentGame(
+    team: String,
+    pointsFor: Double,
+    pointsAgainst: Double,
+    opponent: String
+) {
+    val history = opponentRecentScores.getOrPut(team) {
+        mutableListOf()
+    }
+
+    history.add(
+        RecentGame(
+            pointsFor = pointsFor,
+            pointsAgainst = pointsAgainst,
+            opponent = opponent
+        )
+    )
+
+    // The new model uses the last five games.
+    while (history.size > 5) {
+        history.removeAt(0)
+    }
+}
+
 recordRecentScore(g.home, g.homeScore!!, g.awayScore!!)
 recordRecentScore(g.away, g.awayScore!!, g.homeScore!!)
+
+recordOpponentRecentGame(
+    g.home, g.homeScore!!, g.awayScore!!, g.away
+)
+recordOpponentRecentGame(
+    g.away, g.awayScore!!, g.homeScore!!, g.home
+)
 
 processed++
     }
