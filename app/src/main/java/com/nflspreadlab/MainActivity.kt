@@ -145,6 +145,9 @@ var bestBetsSyncMessage by remember { mutableStateOf("") }
 var performanceStats by remember {
     mutableStateOf<org.json.JSONObject?>(null)
 }
+var savedBestBets by remember {
+    mutableStateOf<org.json.JSONArray?>(null)
+}
 var selectedPage by remember { mutableStateOf("Dashboard") }
 
 
