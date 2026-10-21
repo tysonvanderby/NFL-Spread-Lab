@@ -1346,6 +1346,58 @@ Projection(g, awayRating, homeRating, win, margin)
     return ModelData(upcoming, processed, validation)
 }
 
+private suspend fun loadQuarterbackInjuries(): List<QuarterbackInjury> {
+    return withContext(Dispatchers.IO) {
+        val connection = (URL(
+            "https://nfl-spread-lab-api.onrender.com/injuries/quarterbacks"
+        ).openConnection() as HttpURLConnection)
+
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 20000
+        connection.readTimeout = 45000
+
+        try {
+            val status = connection.responseCode
+            val stream = if (status in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            }
+
+            val response = stream?.bufferedReader()?.use {
+                it.readText()
+            } ?: ""
+
+            if (status !in 200..299) {
+                error("Quarterback injury API returned HTTP $status: $response")
+            }
+
+            val json = org.json.JSONObject(response)
+            val players = json.optJSONArray("quarterbacks")
+                ?: org.json.JSONArray()
+
+            (0 until players.length()).mapNotNull { index ->
+                val player = players.optJSONObject(index)
+                    ?: return@mapNotNull null
+
+                QuarterbackInjury(
+                    team = player.optString("team")
+                        .takeIf { it != "null" && it.isNotBlank() },
+                    player = player.optString("player", "Unknown"),
+                    injury = player.optString("injury")
+                        .takeIf { it != "null" && it.isNotBlank() },
+                    practiceStatus = player.optString("practiceStatus")
+                        .takeIf { it != "null" && it.isNotBlank() },
+                    gameStatus = player.optString("gameStatus")
+                        .takeIf { it != "null" && it.isNotBlank() }
+                )
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
 private fun expectedHomeWin(home: Double, away: Double): Double {
     val difference = home - away + HOME_ADVANTAGE_ELO
     return 1.0 / (1.0 + 10.0.pow(-difference / 400.0))
