@@ -1211,7 +1211,6 @@ val validation = Validation(
     atsNetUnits = atsNetUnits
 )
 
-val today = LocalDate.now().toString()
     val today = LocalDate.now().toString()
     val upcoming = games
         .filter {
