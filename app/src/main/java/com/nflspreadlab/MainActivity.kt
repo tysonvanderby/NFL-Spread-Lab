@@ -962,26 +962,91 @@ var atsNetUnits = 0.0
         val predictedWin = expectedHomeWin(homeRating, awayRating)
         val predictedMargin =
             (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
-// Candidate model: recent offense versus recent defense.
-// Only previously completed games are included.
-fun recentAverage(team: String, index: Int): Double {
-    val scores = recentScores[team].orEmpty()
-    if (scores.isEmpty()) return 22.0
 
-    return scores.map { score ->
-    if (index == 0) score.first else score.second
-}.average()
-}
+        // Opponent-adjusted candidate model.
+        // Uses only games recorded before the current game.
+        val leagueAverage = recentScores.values
+            .flatMap { it }
+            .map { it.first }
+            .average()
+            .takeIf { !it.isNaN() } ?: 22.0
 
-val homeRecentOffense = recentAverage(g.home, 0)
-val homeRecentDefense = recentAverage(g.home, 1)
-val awayRecentOffense = recentAverage(g.away, 0)
-val awayRecentDefense = recentAverage(g.away, 1)
+        // Estimate opponent offense and defense, shrinking small
+        // samples toward the current league scoring average.
+        fun opponentStrength(
+            opponent: String,
+            excludedTeam: String
+        ): Pair<Double, Double> {
+            val history = opponentRecentScores[opponent]
+                .orEmpty()
+                .filter { it.opponent != excludedTeam }
 
-val candidateMargin =
-    ((homeRecentOffense + awayRecentDefense) / 2.0) -
-    ((awayRecentOffense + homeRecentDefense) / 2.0) +
-    2.0
+            if (history.isEmpty()) {
+                return leagueAverage to leagueAverage
+            }
+
+            val shrink = history.size.toDouble() /
+                (history.size + 5.0)
+
+            val rawOffense = history
+                .map { it.pointsFor }
+                .average()
+
+            val rawDefense = history
+                .map { it.pointsAgainst }
+                .average()
+
+            val adjustedOffense = leagueAverage +
+                (rawOffense - leagueAverage) * shrink
+
+            val adjustedDefense = leagueAverage +
+                (rawDefense - leagueAverage) * shrink
+
+            return adjustedOffense to adjustedDefense
+        }
+
+        // Return opponent-adjusted offense and points allowed.
+        fun adjustedRecent(team: String): Pair<Double, Double> {
+            val history = opponentRecentScores[team].orEmpty()
+
+            if (history.isEmpty()) {
+                return leagueAverage to leagueAverage
+            }
+
+            val adjustedOffense = history.map { game ->
+                val opponentDefense = opponentStrength(
+                    game.opponent, team
+                ).second
+
+                game.pointsFor +
+                    (leagueAverage - opponentDefense)
+            }.average()
+
+            val adjustedDefense = history.map { game ->
+                val opponentOffense = opponentStrength(
+                    game.opponent, team
+                ).first
+
+                game.pointsAgainst -
+                    (opponentOffense - leagueAverage)
+            }.average()
+
+            return adjustedOffense to adjustedDefense
+        }
+
+        val homeAdjusted = adjustedRecent(g.home)
+        val awayAdjusted = adjustedRecent(g.away)
+
+        val homeRecentOffense = homeAdjusted.first
+        val homeRecentDefense = homeAdjusted.second
+        val awayRecentOffense = awayAdjusted.first
+        val awayRecentDefense = awayAdjusted.second
+
+        val candidateMargin =
+            ((homeRecentOffense + awayRecentDefense) / 2.0) -
+            ((awayRecentOffense + homeRecentDefense) / 2.0) +
+            2.0
+
         
 if (g.date >= VALIDATION_START) {
     val actual = g.homeScore!! - g.awayScore!!
