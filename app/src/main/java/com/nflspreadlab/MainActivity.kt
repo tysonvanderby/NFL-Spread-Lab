@@ -848,6 +848,13 @@ private data class TeamRecentStats(
     val pointsAgainst: Double,
     val games: Int
 )
+
+private fun nflSeason(date: String): Int {
+    val year = date.substring(0, 4).toInt()
+    val month = date.substring(5, 7).toInt()
+    return if (month >= 7) year else year - 1
+}
+
 private fun loadModelData(): ModelData {
     val url = URL(
         "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
