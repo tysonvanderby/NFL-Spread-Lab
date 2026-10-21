@@ -1076,6 +1076,7 @@ val eloWin = expectedHomeWin(homeRating, awayRating)
 val eloMargin =
     (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
 
+
 val recentScores = games
     .filter {
         it.date < g.date &&
@@ -1089,6 +1090,7 @@ val recentScores = games
             it.homeScore!! to it.awayScore!!
         }
     }
+
 
 fun recentAverage(team: String, index: Int): Double {
     val scores = recentScores[team].orEmpty()
