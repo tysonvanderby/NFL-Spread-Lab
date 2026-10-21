@@ -100,6 +100,14 @@ private data class LiveOddsGame(
     val homeSpread: Double? = null
 )
 
+private data class QuarterbackInjury(
+    val team: String?,
+    val player: String,
+    val injury: String?,
+    val practiceStatus: String?,
+    val gameStatus: String?
+)
+
 
 private data class Validation(
     val games: Int,
