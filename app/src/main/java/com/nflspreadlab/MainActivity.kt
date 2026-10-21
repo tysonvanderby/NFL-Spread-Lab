@@ -379,10 +379,18 @@ Text(
 Text(
     "Candidate Model MAE: ${decimal(model.validation.candidateMarginMae)} points"
 )
+
+  
 Text(
     "Candidate Model RMSE: ${decimal(model.validation.candidateMarginRmse)} points"
 )
-                    Text("Winner accuracy: ${pct(model.validation.winAccuracy)}")
+Text(
+    "Combined Model MAE: ${decimal(model.validation.combinedMarginMae)} points"
+)
+Text(
+    "Combined Model RMSE: ${decimal(model.validation.combinedMarginRmse)} points"
+)
+                  Text("Winner accuracy: ${pct(model.validation.winAccuracy)}")
                     Text("Win probability Brier score: ${decimal(model.validation.brierScore)}")
                     Text("ATS picks tested: ${model.validation.atsPicks}")
                     Text(
