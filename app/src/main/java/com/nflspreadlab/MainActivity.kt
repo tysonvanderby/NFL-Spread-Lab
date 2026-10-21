@@ -1215,31 +1215,94 @@ val eloMargin =
     (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
 
 
-val recentScores = games
+
+val leagueAverage = games
+    .filter {
+        it.date < g.date &&
+            it.homeScore != null &&
+            it.awayScore != null
+    }
+    .flatMap { listOf(it.homeScore!!, it.awayScore!!) }
+    .average()
+    .takeIf { !it.isNaN() } ?: 22.0
+
+data class RecentGame(
+    val pointsFor: Double,
+    val pointsAgainst: Double,
+    val opponent: String
+)
+
+val recentScores = mutableMapOf<String, MutableList<RecentGame>>()
+
+games
     .filter {
         it.date < g.date &&
             it.homeScore != null &&
             it.awayScore != null
     }
     .sortedByDescending { it.date }
-    .groupBy { it.home }
-    .mapValues { (_, teamGames) ->
-        teamGames.take(5).map {
-            it.homeScore!! to it.awayScore!!
-        }
+    .forEach { game ->
+        recentScores.getOrPut(game.home) { mutableListOf() }
+            .add(
+                RecentGame(
+                    game.homeScore!!.toDouble(),
+                    game.awayScore!!.toDouble(),
+                    game.away
+                )
+            )
+
+        recentScores.getOrPut(game.away) { mutableListOf() }
+            .add(
+                RecentGame(
+                    game.awayScore!!.toDouble(),
+                    game.homeScore!!.toDouble(),
+                    game.home
+                )
+            )
     }
 
+fun opponentStrength(opponent: String): Pair<Double, Double> {
+    val history = recentScores[opponent].orEmpty().take(5)
 
-fun recentAverage(team: String, index: Int): Double {
-    val scores = recentScores[team].orEmpty()
-    if (scores.isEmpty()) return 22.0
-    return scores.map { if (index == 0) it.first else it.second }.average()
+    if (history.isEmpty()) return leagueAverage to leagueAverage
+
+    val shrink = history.size.toDouble() / (history.size + 5.0)
+
+    val offense = history.map { it.pointsFor }.average()
+    val defense = history.map { it.pointsAgainst }.average()
+
+    return (
+        leagueAverage + (offense - leagueAverage) * shrink
+    ) to (
+        leagueAverage + (defense - leagueAverage) * shrink
+    )
 }
 
-val homeOffense = recentAverage(g.home, 0)
-val homeDefense = recentAverage(g.home, 1)
-val awayOffense = recentAverage(g.away, 0)
-val awayDefense = recentAverage(g.away, 1)
+fun adjustedRecent(team: String): Pair<Double, Double> {
+    val history = recentScores[team].orEmpty().take(5)
+
+    if (history.isEmpty()) return leagueAverage to leagueAverage
+
+    val offense = history.map { game ->
+        val opponentDefense = opponentStrength(game.opponent).second
+        game.pointsFor + (leagueAverage - opponentDefense)
+    }.average()
+
+    val defense = history.map { game ->
+        val opponentOffense = opponentStrength(game.opponent).first
+        game.pointsAgainst - (opponentOffense - leagueAverage)
+    }.average()
+
+    return offense to defense
+}
+
+val homeAdjusted = adjustedRecent(g.home)
+val awayAdjusted = adjustedRecent(g.away)
+
+val homeOffense = homeAdjusted.first
+val homeDefense = homeAdjusted.second
+val awayOffense = awayAdjusted.first
+val awayDefense = awayAdjusted.second
 
 val candidateMargin =
     ((homeOffense + awayDefense) / 2.0) -
@@ -1248,6 +1311,7 @@ val candidateMargin =
 val margin = 0.5 * eloMargin + 0.5 * candidateMargin
 val win = 0.5 * eloWin +
     0.5 * (1.0 / (1.0 + exp(-margin / 6.5)))
+
 
 Projection(g, awayRating, homeRating, win, margin)
 
