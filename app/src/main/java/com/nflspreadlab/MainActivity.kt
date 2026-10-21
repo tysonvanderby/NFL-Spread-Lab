@@ -940,7 +940,9 @@ fun recentAverage(team: String, index: Int): Double {
     val scores = recentScores[team].orEmpty()
     if (scores.isEmpty()) return 22.0
 
-    return scores.map { it.component(index) }.average()
+    return scores.map { score ->
+    if (index == 0) score.first else score.second
+}.average()
 }
 
 val homeRecentOffense = recentAverage(g.home, 0)
