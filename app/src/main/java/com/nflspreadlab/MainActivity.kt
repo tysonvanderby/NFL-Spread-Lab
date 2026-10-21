@@ -200,7 +200,11 @@ LaunchedEffect(refresh) {
             bestBetsSyncMessage =
                 "Best Bets sync failed: ${e.message ?: "Unknown error"}"
         }
-
+        try {
+    savedBestBets = loadSavedBestBets()
+} catch (e: Exception) {
+    savedBestBets = null
+}
         try {
             performanceStats = loadBestBetsStats()
         } catch (e: Exception) {
