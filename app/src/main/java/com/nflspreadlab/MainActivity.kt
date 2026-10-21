@@ -107,6 +107,8 @@ private data class Validation(
     val marginRmse: Double,
     val candidateMarginMae: Double,
     val candidateMarginRmse: Double,
+    val combinedMarginMae: Double,
+    val combinedMarginRmse: Double,
     val winAccuracy: Double,
     val brierScore: Double,
     val atsPicks: Int,
@@ -115,6 +117,7 @@ private data class Validation(
     val atsPushes: Int,
     val atsNetUnits: Double
 )
+
 
 private data class ModelData(
     val projections: List<Projection>,
