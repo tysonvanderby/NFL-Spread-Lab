@@ -187,7 +187,13 @@ LaunchedEffect(refresh) {
     } catch (e: Exception) {
         oddsError = e.message ?: "Unable to load live sportsbook odds."
     }
-
+    
+injuryError = ""
+try {
+    quarterbackInjuries = loadQuarterbackInjuries()
+} catch (e: Exception) {
+    injuryError = e.message ?: "Unable to load quarterback injuries."
+}
         try {
             val currentModel = data
             val currentOdds = liveOdds
