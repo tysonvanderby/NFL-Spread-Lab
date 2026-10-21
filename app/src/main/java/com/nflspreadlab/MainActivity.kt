@@ -1071,11 +1071,46 @@ candidateMarginRmse = if (candidateTested > 0)
         .map { g ->
             val homeRating = ratings.getOrDefault(g.home, 1500.0)
             val awayRating = ratings.getOrDefault(g.away, 1500.0)
-            val win = expectedHomeWin(homeRating, awayRating)
-            val margin =
-                (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
+            
+val eloWin = expectedHomeWin(homeRating, awayRating)
+val eloMargin =
+    (homeRating - awayRating + HOME_ADVANTAGE_ELO) / ELO_PER_POINT
 
-            Projection(g, awayRating, homeRating, win, margin)
+val recentScores = games
+    .filter {
+        it.date < g.date &&
+            it.homeScore != null &&
+            it.awayScore != null
+    }
+    .sortedByDescending { it.date }
+    .groupBy { it.home }
+    .mapValues { (_, teamGames) ->
+        teamGames.take(5).map {
+            it.homeScore!! to it.awayScore!!
+        }
+    }
+
+fun recentAverage(team: String, index: Int): Double {
+    val scores = recentScores[team].orEmpty()
+    if (scores.isEmpty()) return 22.0
+    return scores.map { if (index == 0) it.first else it.second }.average()
+}
+
+val homeOffense = recentAverage(g.home, 0)
+val homeDefense = recentAverage(g.home, 1)
+val awayOffense = recentAverage(g.away, 0)
+val awayDefense = recentAverage(g.away, 1)
+
+val candidateMargin =
+    ((homeOffense + awayDefense) / 2.0) -
+    ((awayOffense + homeDefense) / 2.0) + 2.0
+
+val margin = 0.5 * eloMargin + 0.5 * candidateMargin
+val win = 0.5 * eloWin +
+    0.5 * (1.0 / (1.0 + exp(-margin / 6.5)))
+
+Projection(g, awayRating, homeRating, win, margin)
+
         }
 
     return ModelData(upcoming, processed, validation)
