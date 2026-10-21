@@ -918,9 +918,23 @@ spreadLine = row[spreadI].trim().trim('"').toDoubleOrNull()
         .filter { it.homeScore != null && it.awayScore != null }
         .sortedBy { it.date }
 
-    val ratings = mutableMapOf<String, Double>()
-    val recentScores =
+    
+val ratings = mutableMapOf<String, Double>()
+
+// Existing recent-scoring history; preserve for baseline comparison.
+val recentScores =
     mutableMapOf<String, MutableList<Pair<Double, Double>>>()
+
+// Opponent-aware history: points scored, points allowed, opponent.
+data class RecentGame(
+    val pointsFor: Double,
+    val pointsAgainst: Double,
+    val opponent: String
+)
+
+val opponentRecentScores =
+    mutableMapOf<String, MutableList<RecentGame>>()
+
     var processed = 0
     var tested = 0
     var candidateAbsoluteError = 0.0
