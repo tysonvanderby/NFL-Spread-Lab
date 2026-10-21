@@ -900,6 +900,9 @@ spreadLine = row[spreadI].trim().trim('"').toDoubleOrNull()
     mutableMapOf<String, MutableList<Pair<Double, Double>>>()
     var processed = 0
     var tested = 0
+    var candidateAbsoluteError = 0.0
+var candidateSquaredError = 0.0
+var candidateTested = 0
     var absoluteError = 0.0
     var squaredError = 0.0
     var brierTotal = 0.0
@@ -937,6 +940,12 @@ val candidateMargin =
     ((homeRecentOffense + awayRecentDefense) / 2.0) -
     ((awayRecentOffense + homeRecentDefense) / 2.0) +
     2.0
+        if (g.date >= VALIDATION_START) {
+    val candidateError = candidateMargin - (g.homeScore!! - g.awayScore!!)
+    candidateAbsoluteError += abs(candidateError)
+    candidateSquaredError += candidateError * candidateError
+    candidateTested++
+        }
         val actualMargin = g.homeScore!! - g.awayScore!!
         if (g.date >= VALIDATION_START && g.spreadLine != null) {
     val edge = predictedMargin - g.spreadLine
@@ -993,8 +1002,27 @@ val candidateMargin =
         }
         val change = ELO_K * (actualHome - predictedWin)
         ratings[g.home] = homeRating + change
-        ratings[g.away] = awayRating - change
-        processed++
+ratings[g.away] = awayRating - change
+
+// Record this game only after its prediction is complete.
+fun recordRecentScore(
+    team: String,
+    pointsFor: Double,
+    pointsAgainst: Double
+) {
+    val history = recentScores.getOrPut(team) { mutableListOf() }
+    history.add(pointsFor to pointsAgainst)
+
+    // Keep only the eight most recent games.
+    while (history.size > 8) {
+        history.removeAt(0)
+    }
+}
+
+recordRecentScore(g.home, g.homeScore!!, g.awayScore!!)
+recordRecentScore(g.away, g.awayScore!!, g.homeScore!!)
+
+processed++
     }
 
     
