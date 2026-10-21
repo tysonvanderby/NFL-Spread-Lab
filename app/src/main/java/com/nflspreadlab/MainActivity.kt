@@ -105,6 +105,8 @@ private data class Validation(
     val games: Int,
     val marginMae: Double,
     val marginRmse: Double,
+    val candidateMarginMae: Double,
+    val candidateMarginRmse: Double,
     val winAccuracy: Double,
     val brierScore: Double,
     val atsPicks: Int,
