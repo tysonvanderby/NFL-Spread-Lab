@@ -957,12 +957,22 @@ val candidateMargin =
     ((homeRecentOffense + awayRecentDefense) / 2.0) -
     ((awayRecentOffense + homeRecentDefense) / 2.0) +
     2.0
-        if (g.date >= VALIDATION_START) {
-    val candidateError = candidateMargin - (g.homeScore!! - g.awayScore!!)
+        
+if (g.date >= VALIDATION_START) {
+    val actual = g.homeScore!! - g.awayScore!!
+
+    val candidateError = candidateMargin - actual
     candidateAbsoluteError += abs(candidateError)
     candidateSquaredError += candidateError * candidateError
     candidateTested++
-        }
+
+    val combinedMargin = 0.5 * predictedMargin + 0.5 * candidateMargin
+    val combinedError = combinedMargin - actual
+    combinedAbsoluteError += abs(combinedError)
+    combinedSquaredError += combinedError * combinedError
+    combinedTested++
+}
+
         val actualMargin = g.homeScore!! - g.awayScore!!
         if (g.date >= VALIDATION_START && g.spreadLine != null) {
     val edge = predictedMargin - g.spreadLine
