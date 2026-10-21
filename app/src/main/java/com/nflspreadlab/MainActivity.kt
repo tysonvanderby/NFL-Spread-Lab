@@ -367,8 +367,18 @@ if (selectedPage == "Performance") {
                         fontWeight = FontWeight.Bold
                     )
                     Text("Games tested: ${model.validation.games}")
-                    Text("Margin MAE: ${decimal(model.validation.marginMae)} points")
-                    Text("Margin RMSE: ${decimal(model.validation.marginRmse)} points")
+                    Text(
+    "Elo Model MAE: ${decimal(model.validation.marginMae)} points"
+)
+Text(
+    "Elo Model RMSE: ${decimal(model.validation.marginRmse)} points"
+)
+Text(
+    "Candidate Model MAE: ${decimal(model.validation.candidateMarginMae)} points"
+)
+Text(
+    "Candidate Model RMSE: ${decimal(model.validation.candidateMarginRmse)} points"
+)
                     Text("Winner accuracy: ${pct(model.validation.winAccuracy)}")
                     Text("Win probability Brier score: ${decimal(model.validation.brierScore)}")
                     Text("ATS picks tested: ${model.validation.atsPicks}")
