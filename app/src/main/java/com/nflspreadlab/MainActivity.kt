@@ -294,6 +294,65 @@ if (selectedPage == "Dashboard") {
 if (selectedPage == "Performance") {
 
                     Text(
+                        "MODEL PERFORMANCE",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    val stats = performanceStats
+
+                    if (stats == null) {
+                        Text(
+                            "Performance statistics unavailable. " +
+                                "Refresh to try again."
+                        )
+                    } else {
+                        val graded = stats.optInt("graded", 0)
+                        val wins = stats.optInt("wins", 0)
+                        val losses = stats.optInt("losses", 0)
+                        val pushes = stats.optInt("pushes", 0)
+                        val pending = stats.optInt("pending", 0)
+                        val units = stats.optString("units", "0.0000")
+
+                        val winPercentage =
+                            if (stats.isNull("win_percentage")) {
+                                "N/A"
+                            } else {
+                                "${stats.optDouble("win_percentage")}%"
+                            }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalArrangement =
+                                    Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    "Tracked Best Bets Record",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Text(
+                                    "$wins W - $losses L - $pushes P",
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+
+                                HorizontalDivider()
+
+                                Text("Win percentage: $winPercentage")
+                                Text("Graded picks: $graded")
+                                Text("Pending picks: $pending")
+                                Text("Net units: $units")
+                            }
+                        }
+                    }
+
+                    Text(
                         "WALK-FORWARD VALIDATION",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
