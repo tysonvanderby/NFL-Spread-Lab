@@ -153,7 +153,11 @@ private fun SpreadLabScreen() {
     var error by remember { mutableStateOf("") }
     var refresh by remember { mutableIntStateOf(0) }
     var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
-var oddsError by remember { mutableStateOf("") }
+    var quarterbackInjuries by remember {
+    mutableStateOf<List<QuarterbackInjury>>(emptyList())
+}
+var injuryError by remember { mutableStateOf("") }
+    var oddsError by remember { mutableStateOf("") }
 var bestBetsSyncMessage by remember { mutableStateOf("") }
 var performanceStats by remember {
     mutableStateOf<org.json.JSONObject?>(null)
