@@ -953,8 +953,16 @@ var atsWins = 0
 var atsLosses = 0
 var atsPushes = 0
 var atsNetUnits = 0.0
-
+var activeSeason: Int? = null
+    
     for (g in completed) {
+        val currentSeason = nflSeason(g.date)
+
+if (activeSeason != currentSeason) {
+    recentScores.clear()
+    opponentRecentScores.clear()
+    activeSeason = currentSeason
+}
         val homeRating = ratings.getOrDefault(g.home, 1500.0)
         val awayRating = ratings.getOrDefault(g.away, 1500.0)
 
