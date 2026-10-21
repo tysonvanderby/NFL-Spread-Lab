@@ -297,22 +297,69 @@ Row(
 
         data?.let { model ->
             
+
 if (selectedPage == "Dashboard") {
 
-            Card {
-                Column(
-                    Modifier.fillMaxWidth().padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text("MODEL STATUS", fontWeight = FontWeight.Bold)
-                    Text("Historical games processed: ${model.historicalGames}")
-                    Text("Model: Elo, K = ${ELO_K.toInt()}")
-                    Text("Source: public nflverse games.csv")
-                    Text("Home advantage: ${HOME_ADVANTAGE_ELO.toInt()} Elo points")
-                    Text("Validation period: 2015 onward")
+    Card {
+        Column(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text("MODEL STATUS", fontWeight = FontWeight.Bold)
+            Text("Historical games processed: ${model.historicalGames}")
+            Text("Model: Elo, K = ${ELO_K.toInt()}")
+            Text("Source: public nflverse games.csv")
+            Text("Home advantage: ${HOME_ADVANTAGE_ELO.toInt()} Elo points")
+            Text("Validation period: 2015 onward")
+        }
+    }
+
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                "QUARTERBACK INJURIES",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (injuryError.isNotBlank()) {
+                Text("Injury feed error: $injuryError")
+            } else if (quarterbackInjuries.isEmpty()) {
+                Text("No quarterback injury records returned.")
+            } else {
+                Text("Records loaded: ${quarterbackInjuries.size}")
+
+                quarterbackInjuries.forEach { qb ->
+                    HorizontalDivider()
+
+                    Text(
+                        qb.player,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Text("Team: ${qb.team ?: "Not identified"}")
+
+                    qb.injury?.let {
+                        Text("Injury: $it")
+                    }
+
+                    qb.practiceStatus?.let {
+                        Text("Practice: $it")
+                    }
+
+                    qb.gameStatus?.let {
+                        Text("Game status: $it")
+                    }
                 }
             }
         }
+    }
+}
 
 
             Card {
