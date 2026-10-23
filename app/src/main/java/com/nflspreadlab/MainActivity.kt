@@ -71,6 +71,48 @@ private fun normalizeTeamName(name: String): String {
     }?.value ?: name.trim().uppercase(Locale.US)
 }
 
+private fun sameNflTeam(first: String, second: String): Boolean {
+    val nicknames = mapOf(
+        "49ERS" to "SF",
+        "BEARS" to "CHI",
+        "BENGALS" to "CIN",
+        "BILLS" to "BUF",
+        "BRONCOS" to "DEN",
+        "BROWNS" to "CLE",
+        "BUCCANEERS" to "TB",
+        "CARDINALS" to "ARI",
+        "CHARGERS" to "LAC",
+        "CHIEFS" to "KC",
+        "COLTS" to "IND",
+        "COMMANDERS" to "WAS",
+        "COWBOYS" to "DAL",
+        "DOLPHINS" to "MIA",
+        "EAGLES" to "PHI",
+        "FALCONS" to "ATL",
+        "GIANTS" to "NYG",
+        "JAGUARS" to "JAX",
+        "JETS" to "NYJ",
+        "LIONS" to "DET",
+        "PACKERS" to "GB",
+        "PANTHERS" to "CAR",
+        "PATRIOTS" to "NE",
+        "RAIDERS" to "LV",
+        "RAMS" to "LA",
+        "RAVENS" to "BAL",
+        "SAINTS" to "NO",
+        "SEAHAWKS" to "SEA",
+        "STEELERS" to "PIT",
+        "TEXANS" to "HOU",
+        "TITANS" to "TEN",
+        "VIKINGS" to "MIN"
+    )
+
+    val a = normalizeTeamName(first)
+    val b = normalizeTeamName(second)
+
+    return (nicknames[a] ?: a) == (nicknames[b] ?: b)
+}
+
 
 private data class Game(
     val date: String,
