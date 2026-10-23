@@ -1547,6 +1547,53 @@ private suspend fun loadQuarterbackInjuries(): List<QuarterbackInjury> {
     }
 }
 
+private suspend fun loadQuarterbackRoster(): List<QuarterbackRosterPlayer> {
+    return withContext(Dispatchers.IO) {
+        val connection = (URL(
+            "https://nfl-spread-lab-api.onrender.com/roster/quarterbacks"
+        ).openConnection() as HttpURLConnection)
+
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 15000
+            connection.readTimeout = 15000
+
+            val response = connection.inputStream
+                .bufferedReader()
+                .use { it.readText() }
+
+            val json = org.json.JSONObject(response)
+            val players = json.optJSONArray("quarterbacks")
+                ?: org.json.JSONArray()
+
+            (0 until players.length()).mapNotNull { index ->
+                val player = players.optJSONObject(index)
+                    ?: return@mapNotNull null
+
+                val team = player.optString("team")
+                val name = player.optString("player")
+
+                if (
+                    team.isBlank() ||
+                    team == "null" ||
+                    name.isBlank() ||
+                    name == "null"
+                ) {
+                    null
+                } else {
+                    QuarterbackRosterPlayer(
+                        team = team,
+                        player = name,
+                        position = player.optString("position", "QB")
+                    )
+                }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
 private fun expectedHomeWin(home: Double, away: Double): Double {
     val difference = home - away + HOME_ADVANTAGE_ELO
     return 1.0 / (1.0 + 10.0.pow(-difference / 400.0))
