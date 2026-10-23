@@ -721,6 +721,52 @@ val lineText = spreadInputs[key]
                         )
                         Text("${p.game.date} | Week ${p.game.week}")
                         HorizontalDivider()
+                        
+val homeQbInjuries = quarterbackInjuries.filter {
+    it.team != null &&
+        sameNflTeam(it.team, p.game.home) &&
+        (
+            it.injury != null ||
+            it.gameStatus != null ||
+            it.practiceStatus?.contains(
+                "Did Not Participate",
+                ignoreCase = true
+            ) == true ||
+            it.practiceStatus?.contains(
+                "Limited",
+                ignoreCase = true
+            ) == true
+        )
+}
+
+val awayQbInjuries = quarterbackInjuries.filter {
+    it.team != null &&
+        sameNflTeam(it.team, p.game.away) &&
+        (
+            it.injury != null ||
+            it.gameStatus != null ||
+            it.practiceStatus?.contains(
+                "Did Not Participate",
+                ignoreCase = true
+            ) == true ||
+            it.practiceStatus?.contains(
+                "Limited",
+                ignoreCase = true
+            ) == true
+        )
+}
+
+(homeQbInjuries + awayQbInjuries).forEach { qb ->
+    Text(
+        "QB ALERT: ${qb.player} (${qb.team})",
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.error
+    )
+    Text("Injury: ${qb.injury ?: "Not specified"}")
+    Text("Practice: ${qb.practiceStatus ?: "Not reported"}")
+    Text("Game status: ${qb.gameStatus ?: "Not reported"}")
+}
+
 
                         Text("Home Elo: ${p.homeElo.toInt()} | Away Elo: ${p.awayElo.toInt()}")
                         Text("Home win probability: ${pct(p.homeWin)}")
