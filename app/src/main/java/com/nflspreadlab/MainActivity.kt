@@ -149,7 +149,11 @@ private data class QuarterbackInjury(
     val practiceStatus: String?,
     val gameStatus: String?
 )
-
+private data class QuarterbackRosterPlayer(
+    val team: String,
+    val player: String,
+    val position: String
+)
 
 private data class Validation(
     val games: Int,
