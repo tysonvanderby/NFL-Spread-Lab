@@ -265,6 +265,13 @@ try {
 } catch (e: Exception) {
     rosterError = "Could not load quarterback roster: ${e.message}"
 }
+depthChartError = ""
+try {
+    quarterbackDepthChart = loadQuarterbackDepthChart()
+} catch (e: Exception) {
+    depthChartError =
+        "Could not load quarterback depth chart: ${e.message}"
+}
         try {
             val currentModel = data
             val currentOdds = liveOdds
