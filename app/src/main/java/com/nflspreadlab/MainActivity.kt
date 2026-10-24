@@ -201,8 +201,7 @@ private fun SpreadLabScreen() {
     var liveOdds by remember { mutableStateOf<List<LiveOddsGame>>(emptyList()) }
     var quarterbackInjuries by remember {
     mutableStateOf<List<QuarterbackInjury>>(emptyList())
-}
-var rosterError by remember { mutableStateOf("") }    
+}    
 var quarterbackRoster by remember {
     mutableStateOf<List<QuarterbackRosterPlayer>>(emptyList())
 }
