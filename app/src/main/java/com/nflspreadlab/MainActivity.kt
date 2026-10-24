@@ -802,7 +802,37 @@ val awayQbInjuries = quarterbackInjuries.filter {
     Text("Practice: ${qb.practiceStatus ?: "Not reported"}")
     Text("Game status: ${qb.gameStatus ?: "Not reported"}")
 }
+val awayStarter = quarterbackDepthChart.firstOrNull {
+    sameNflTeam(it.team, p.game.away) &&
+        it.depthRank == 1
+}
 
+val homeStarter = quarterbackDepthChart.firstOrNull {
+    sameNflTeam(it.team, p.game.home) &&
+        it.depthRank == 1
+}
+
+Text(
+    "LISTED STARTERS",
+    fontWeight = FontWeight.Bold
+)
+
+Text(
+    "${p.game.away} QB1: " +
+        (awayStarter?.player ?: "Not available")
+)
+
+Text(
+    "${p.game.home} QB1: " +
+        (homeStarter?.player ?: "Not available")
+)
+
+if (depthChartError.isNotBlank()) {
+    Text(
+        depthChartError,
+        color = MaterialTheme.colorScheme.error
+    )
+}
 Text(
     "${p.game.away} QBs: " +
         quarterbackRoster
