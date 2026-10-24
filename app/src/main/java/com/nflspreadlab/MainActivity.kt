@@ -1634,6 +1634,72 @@ private suspend fun loadQuarterbackRoster(): List<QuarterbackRosterPlayer> {
         }
     }
 }
+private suspend fun loadQuarterbackDepthChart(): List<QuarterbackDepthChartPlayer> {
+    return withContext(Dispatchers.IO) {
+        val connection = (URL(
+            "https://nfl-spread-lab-api.onrender.com/depth-charts/quarterbacks"
+        ).openConnection() as HttpURLConnection)
+
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 15000
+            connection.readTimeout = 15000
+
+            val status = connection.responseCode
+            val stream = if (status in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            }
+
+            val response = stream?.bufferedReader()?.use {
+                it.readText()
+            } ?: ""
+
+            if (status !in 200..299) {
+                error("Quarterback depth-chart API returned HTTP $status: $response")
+            }
+
+            val json = org.json.JSONObject(response)
+            val updatedAt = json.optString("updatedAt")
+                .takeIf { it.isNotBlank() && it != "null" }
+
+            val players = json.optJSONArray("quarterbacks")
+                ?: org.json.JSONArray()
+
+            (0 until players.length()).mapNotNull { index ->
+                val player = players.optJSONObject(index)
+                    ?: return@mapNotNull null
+
+                val team = player.optString("team")
+                val name = player.optString("player")
+                val depthRank = player.optInt("depthRank", 0)
+
+                if (
+                    team.isBlank() ||
+                    team == "null" ||
+                    name.isBlank() ||
+                    name == "null" ||
+                    depthRank <= 0
+                ) {
+                    null
+                } else {
+                    QuarterbackDepthChartPlayer(
+                        team = team,
+                        player = name,
+                        position = player.optString("position", "QB"),
+                        depthRank = depthRank,
+                        updatedAt = player.optString("updatedAt")
+                            .takeIf { it.isNotBlank() && it != "null" }
+                            ?: updatedAt
+                    )
+                }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
 
 private fun expectedHomeWin(home: Double, away: Double): Double {
     val difference = home - away + HOME_ADVANTAGE_ELO
