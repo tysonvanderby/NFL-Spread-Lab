@@ -785,6 +785,27 @@ val awayQbInjuries = quarterbackInjuries.filter {
     Text("Game status: ${qb.gameStatus ?: "Not reported"}")
 }
 
+Text(
+    "QUARTERBACK ROSTERS",
+    fontWeight = FontWeight.Bold
+)
+
+Text(
+    "${p.game.away} QBs: " +
+        quarterbackRoster
+            .filter { sameNflTeam(it.team, p.game.away) }
+            .joinToString(", ") { it.player }
+            .ifBlank { "Roster unavailable" }
+)
+
+Text(
+    "${p.game.home} QBs: " +
+        quarterbackRoster
+            .filter { sameNflTeam(it.team, p.game.home) }
+            .joinToString(", ") { it.player }
+            .ifBlank { "Roster unavailable" }
+)
+
 
                         Text("Home Elo: ${p.homeElo.toInt()} | Away Elo: ${p.awayElo.toInt()}")
                         Text("Home win probability: ${pct(p.homeWin)}")
