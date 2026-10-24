@@ -782,11 +782,6 @@ val awayQbInjuries = quarterbackInjuries.filter {
 }
 
 Text(
-    "QUARTERBACK ROSTERS",
-    fontWeight = FontWeight.Bold
-)
-
-Text(
     "${p.game.away} QBs: " +
         quarterbackRoster
             .filter { sameNflTeam(it.team, p.game.away) }
