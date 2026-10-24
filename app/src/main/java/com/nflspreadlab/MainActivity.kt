@@ -142,6 +142,15 @@ private data class LiveOddsGame(
     val homeSpread: Double? = null
 )
 
+private data class QuarterbackDepthChartPlayer(
+    val team: String,
+    val player: String,
+    val position: String,
+    val depthRank: Int,
+    val updatedAt: String?
+)
+
+
 private data class QuarterbackInjury(
     val team: String?,
     val player: String,
@@ -205,6 +214,12 @@ private fun SpreadLabScreen() {
 var quarterbackRoster by remember {
     mutableStateOf<List<QuarterbackRosterPlayer>>(emptyList())
 }
+
+var quarterbackDepthChart by remember {
+    mutableStateOf<List<QuarterbackDepthChartPlayer>>(emptyList())
+}
+var depthChartError by remember { mutableStateOf("") }
+
 var rosterError by remember { mutableStateOf("") }    
 var injuryError by remember { mutableStateOf("") }
     var oddsError by remember { mutableStateOf("") }
