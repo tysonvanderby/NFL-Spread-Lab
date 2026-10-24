@@ -206,6 +206,10 @@ var quarterbackRoster by remember {
     mutableStateOf<List<QuarterbackRosterPlayer>>(emptyList())
 }
 var rosterError by remember { mutableStateOf("") }    
+var quarterbackRoster by remember {
+    mutableStateOf<List<QuarterbackRosterPlayer>>(emptyList())
+}
+var rosterError by remember { mutableStateOf("") }    
 var injuryError by remember { mutableStateOf("") }
     var oddsError by remember { mutableStateOf("") }
 var bestBetsSyncMessage by remember { mutableStateOf("") }
