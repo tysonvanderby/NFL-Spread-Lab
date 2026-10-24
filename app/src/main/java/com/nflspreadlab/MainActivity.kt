@@ -248,6 +248,12 @@ try {
 } catch (e: Exception) {
     injuryError = e.message ?: "Unable to load quarterback injuries."
 }
+try {
+    quarterbackRoster = loadQuarterbackRoster()
+    rosterError = ""
+} catch (e: Exception) {
+    rosterError = "Could not load quarterback roster: ${e.message}"
+}
         try {
             val currentModel = data
             val currentOdds = liveOdds
