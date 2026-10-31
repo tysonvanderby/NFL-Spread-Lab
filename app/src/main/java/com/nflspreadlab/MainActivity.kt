@@ -285,6 +285,13 @@ try {
     depthChartError =
         "Could not load quarterback depth chart: ${e.message}"
 }
+quarterbackHistoryError = ""
+try {
+    quarterbackHistory = loadQuarterbackHistory()
+} catch (e: Exception) {
+    quarterbackHistoryError =
+        "Could not load QB history: ${e.message}"
+}
         try {
             val currentModel = data
             val currentOdds = liveOdds
