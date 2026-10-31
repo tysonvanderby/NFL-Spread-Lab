@@ -898,7 +898,43 @@ if (selectedPage == "QB Report") {
                     } else {
                         Text("No QB injury records returned.")
                     }
+val listedStarter = depthPlayers.firstOrNull {
+    it.depthRank == 1
+}
 
+if (listedStarter == null) {
+    Text(
+        "QB1 STATUS: Unknown — no depth-chart starter available",
+        color = MaterialTheme.colorScheme.error
+    )
+} else {
+    val starterInjury = injuries.firstOrNull {
+        it.player.replace(Regex("[^A-Za-z]"), "")
+            .equals(
+                listedStarter.player.replace(
+                    Regex("[^A-Za-z]"),
+                    ""
+                ),
+                ignoreCase = true
+            )
+    }
+
+    if (starterInjury != null) {
+        Text(
+            "QB1 ALERT: ${listedStarter.player} appears on the injury report",
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.error
+        )
+
+        Text("Game status: ${starterInjury.gameStatus ?: "Not reported"}")
+        Text("Practice: ${starterInjury.practiceStatus ?: "Not reported"}")
+        Text("Injury: ${starterInjury.injury ?: "Not specified"}")
+    } else {
+        Text(
+            "QB1: ${listedStarter.player} — no matching injury listing found"
+        )
+    }
+}
                     HorizontalDivider()
                 }
             }
