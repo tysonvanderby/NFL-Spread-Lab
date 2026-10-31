@@ -150,6 +150,14 @@ private data class QuarterbackDepthChartPlayer(
     val updatedAt: String?
 )
 
+private data class QuarterbackHistory(
+    val team: String,
+    val currentQB1: String?,
+    val previousQB1: String?,
+    val changed: Boolean,
+    val currentChartDate: String?,
+    val previousChartDate: String?
+)
 
 private data class QuarterbackInjury(
     val team: String?,
