@@ -845,6 +845,56 @@ if (selectedPage == "QB Report") {
     )
 
     Text("Quarterbacks grouped by upcoming matchup")
+    Text(
+    "QB1 DEPTH-CHART CHANGES",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold
+)
+
+if (quarterbackHistoryError.isNotBlank()) {
+    Text(
+        quarterbackHistoryError,
+        color = MaterialTheme.colorScheme.error
+    )
+} else {
+    val qb1Changes = quarterbackHistory.filter {
+        it.changed &&
+            it.currentQB1 != null &&
+            it.previousQB1 != null
+    }
+
+    val awaitingBaseline = quarterbackHistory.count {
+        it.previousQB1 == null
+    }
+
+    if (qb1Changes.isNotEmpty()) {
+        qb1Changes.forEach { change ->
+            Card {
+                Column(
+                    Modifier.fillMaxWidth().padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "${change.team}: QB1 CHANGE",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text("${change.previousQB1} → ${change.currentQB1}")
+                    Text("Updated: ${change.currentChartDate ?: "Unknown"}")
+                }
+            }
+        }
+    } else {
+        Text("No confirmed QB1 changes between recorded snapshots.")
+    }
+
+    if (awaitingBaseline > 0) {
+        Text(
+            "$awaitingBaseline teams still need a second snapshot before changes can be detected.",
+            style = MaterialTheme.typography.bodySmall
+        )
+    }
+}
 
     if (rosterError.isNotBlank()) {
         Text(rosterError, color = MaterialTheme.colorScheme.error)
