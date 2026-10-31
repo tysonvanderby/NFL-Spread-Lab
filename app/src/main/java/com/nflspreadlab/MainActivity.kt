@@ -1784,6 +1784,65 @@ private suspend fun loadQuarterbackDepthChart(): List<QuarterbackDepthChartPlaye
     }
 }
 
+private suspend fun loadQuarterbackHistory(): List<QuarterbackHistory> {
+    return withContext(Dispatchers.IO) {
+        val connection = (URL(
+            "https://nfl-spread-lab-api.onrender.com/depth-charts/quarterbacks/history"
+        ).openConnection() as HttpURLConnection)
+
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 15000
+            connection.readTimeout = 15000
+
+            val status = connection.responseCode
+            val stream = if (status in 200..299) {
+                connection.inputStream
+            } else {
+                connection.errorStream
+            }
+
+            val response = stream?.bufferedReader()?.use {
+                it.readText()
+            } ?: ""
+
+            if (status !in 200..299) {
+                error("QB history API returned HTTP $status: $response")
+            }
+
+            val json = org.json.JSONObject(response)
+            val history = json.optJSONArray("history")
+                ?: org.json.JSONArray()
+
+            (0 until history.length()).mapNotNull { index ->
+                val item = history.optJSONObject(index)
+                    ?: return@mapNotNull null
+
+                val team = item.optString("team")
+
+                if (team.isBlank() || team == "null") {
+                    null
+                } else {
+                    QuarterbackHistory(
+                        team = team,
+                        currentQB1 = item.optString("currentQB1")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        previousQB1 = item.optString("previousQB1")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        changed = item.optBoolean("changed", false),
+                        currentChartDate = item.optString("currentChartDate")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        previousChartDate = item.optString("previousChartDate")
+                            .takeIf { it.isNotBlank() && it != "null" }
+                    )
+                }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
 private fun expectedHomeWin(home: Double, away: Double): Double {
     val difference = home - away + HOME_ADVANTAGE_ELO
     return 1.0 / (1.0 + 10.0.pow(-difference / 400.0))
