@@ -908,6 +908,94 @@ Text(
                 }
             }
         } 
+if (selectedPage == "QB Report") {
+    Text(
+        "QUARTERBACK REPORT",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
+
+    Text("Quarterbacks grouped by upcoming matchup")
+
+    if (rosterError.isNotBlank()) {
+        Text(rosterError, color = MaterialTheme.colorScheme.error)
+    }
+
+    if (depthChartError.isNotBlank()) {
+        Text(depthChartError, color = MaterialTheme.colorScheme.error)
+    }
+
+    if (injuryError.isNotBlank()) {
+        Text(injuryError, color = MaterialTheme.colorScheme.error)
+    }
+
+    if (model.projections.isEmpty()) {
+        Text("No upcoming matchups available.")
+    }
+
+    model.projections.forEach { p ->
+        Card {
+            Column(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "${p.game.away} at ${p.game.home}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text("${p.game.date} | Week ${p.game.week}")
+                HorizontalDivider()
+
+                listOf(p.game.away, p.game.home).forEach { team ->
+                    Text(team, fontWeight = FontWeight.Bold)
+
+                    val depthPlayers = quarterbackDepthChart
+                        .filter { sameNflTeam(it.team, team) }
+                        .sortedBy { it.depthRank }
+
+                    if (depthPlayers.isNotEmpty()) {
+                        depthPlayers.forEach { qb ->
+                            Text("QB${qb.depthRank}: ${qb.player}")
+                        }
+                    } else {
+                        Text("Depth chart unavailable")
+                    }
+
+                    val rosterPlayers = quarterbackRoster
+                        .filter { sameNflTeam(it.team, team) }
+
+                    Text(
+                        "Roster: " +
+                            rosterPlayers.joinToString(", ") { it.player }
+                            .ifBlank { "Unavailable" }
+                    )
+
+                    val injuries = quarterbackInjuries.filter {
+                        it.team != null &&
+                            sameNflTeam(it.team, team)
+                    }
+
+                    if (injuries.isNotEmpty()) {
+                        Text("INJURY REPORT", fontWeight = FontWeight.Bold)
+
+                        injuries.forEach { qb ->
+                            Text(qb.player, fontWeight = FontWeight.SemiBold)
+                            Text("Injury: ${qb.injury ?: "Not reported"}")
+                            Text("Practice: ${qb.practiceStatus ?: "Not reported"}")
+                            Text("Game status: ${qb.gameStatus ?: "Not reported"}")
+                        }
+                    } else {
+                        Text("No QB injury records returned.")
+                    }
+
+                    HorizontalDivider()
+                }
+            }
+        }
+    }
+}
 
 if (selectedPage == "Performance") {
             Text(
