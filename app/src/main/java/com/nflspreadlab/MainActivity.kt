@@ -226,6 +226,11 @@ var quarterbackRoster by remember {
 var quarterbackDepthChart by remember {
     mutableStateOf<List<QuarterbackDepthChartPlayer>>(emptyList())
 }
+
+var quarterbackHistory by remember {
+    mutableStateOf<List<QuarterbackHistory>>(emptyList())
+}
+var quarterbackHistoryError by remember { mutableStateOf("") }
 var depthChartError by remember { mutableStateOf("") }
 
 var rosterError by remember { mutableStateOf("") }    
